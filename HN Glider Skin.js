@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HN Glider Skin
 // @namespace    https://github.com/outmanos/hn-glider-skin
-// @version      1.1.0
+// @version      1.2.0
 // @description  Reskins Hacker News with a modern, Glider-inspired Material look: card-based rows, clean typography, upvote/comment counts as stat chips, light/dark/auto theme toggle and an data export function.
 // @author       outmanos
 // @license      GPLv3
@@ -20,7 +20,7 @@
 (function () {
   'use strict';
 
-  console.info('[HN Glider] v1.1.0 loaded on', location.href);
+  console.info('[HN Glider] v1.2.0 loaded on', location.href);
 
   /* ------------------------------------------------------------------
    * 1. THEME STATE
@@ -159,6 +159,66 @@
     color-scheme: dark;
   }
 
+  /* ---------- Pixel avatars ----------
+     Each user's pattern is a per-user mask; its hue comes from the same
+     hash. Saturation/lightness are theme tokens, so switching themes just
+     recolors every avatar without regenerating anything. */
+  html[data-hn-glider-theme="light"] {
+    --hng-av-s: 58%;
+    --hng-av-l: 47%;
+    --hng-av-bg-s: 70%;
+    --hng-av-bg-l: 93%;
+  }
+
+  html[data-hn-glider-theme="dark"] {
+    --hng-av-s: 62%;
+    --hng-av-l: 67%;
+    --hng-av-bg-s: 24%;
+    --hng-av-bg-l: 23%;
+  }
+
+  /* Avatars are tiny inline SVGs (HN's Content Security Policy blocks
+     data: images, so CSS masks/backgrounds can't be used). */
+  html[data-hn-glider-theme] svg.hng-avatar {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    overflow: hidden;
+    vertical-align: middle;
+    shape-rendering: crispEdges;
+    background-color: hsl(var(--hng-av-h, 0) var(--hng-av-bg-s) var(--hng-av-bg-l));
+  }
+
+  html[data-hn-glider-theme] svg.hng-avatar path {
+    fill: hsl(var(--hng-av-h, 0) var(--hng-av-s) var(--hng-av-l));
+  }
+
+  html[data-hn-glider-theme] svg.hng-avatar-comment {
+    width: 18px;
+    height: 18px;
+    margin: -2px 5px 0 0;
+  }
+
+  html[data-hn-glider-theme] svg.hng-avatar-story {
+    width: 16px;
+    height: 16px;
+    margin: -2px 4px 0 2px;
+    border-radius: 3px;
+  }
+
+  html[data-hn-glider-theme] svg.hng-avatar-topbar {
+    width: 16px;
+    height: 16px;
+  }
+
+  html[data-hn-glider-theme] svg.hng-avatar-profile {
+    width: 54px;
+    height: 54px;
+    border-radius: 16px;
+  }
+
   html[data-hn-glider-theme] body {
     background: var(--hng-bg) !important;
     font-family: var(--hng-font) !important;
@@ -260,6 +320,9 @@
   }
 
   html[data-hn-glider-theme] .hng-topbar .hng-user {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     font-size: 11.5px;
     color: var(--hng-text-dim) !important;
     text-decoration: none;
@@ -594,6 +657,12 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* Item pages render an empty rank span; don't show a blank chip. */
+  html[data-hn-glider-theme] .rank:empty,
+  html[data-hn-glider-theme] .rank.hng-rank-empty {
+    display: none !important;
+  }
+
   html[data-hn-glider-theme] .votelinks {
     position: relative;
   }
@@ -618,6 +687,7 @@
     line-height: 0 !important;
     opacity: 0.6;
     filter: none;
+    cursor: pointer;
     transition: background 0.12s ease, color 0.12s ease, opacity 0.12s ease;
   }
 
@@ -636,6 +706,38 @@
     border-right: 5px solid transparent !important;
     border-bottom: 8px solid currentColor !important;
     background: none !important;
+    transition: transform 0.12s ease;
+  }
+
+  html[data-hn-glider-theme] .votelinks a:active .votearrow {
+    transform: scale(0.85);
+  }
+
+  /* Upvoted state: the arrow stays visible and turns accent orange,
+     like a filled heart. Clicking it again unvotes. */
+  html[data-hn-glider-theme] .votelinks a.hng-voted {
+    visibility: visible !important;
+    color: var(--hng-accent) !important;
+    opacity: 1;
+  }
+
+  html[data-hn-glider-theme] .votelinks a.hng-voted:hover {
+    background: var(--hng-chip-up-bg) !important;
+  }
+
+  html[data-hn-glider-theme] .votelinks a.hng-vote-busy {
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
+  html[data-hn-glider-theme] .votelinks a.hng-vote-error {
+    color: #d33 !important;
+    opacity: 1;
+  }
+
+  /* HN's separate "unvote" link is redundant now that the arrow toggles. */
+  html[data-hn-glider-theme] .hng-unv-hidden {
+    display: none !important;
   }
 
   /* ---------- Subtext -> stat chip row ---------- */
@@ -711,8 +813,13 @@
     background: transparent !important;
   }
 
+  /* Story header and comment tree share one width so the title, the
+     add-comment box and top-level comment cards line up. */
+  html[data-hn-glider-theme] table.fatitem,
   html[data-hn-glider-theme] .comment-tree,
   html[data-hn-glider-theme] table.comment-tree {
+    width: 100% !important;
+    box-sizing: border-box !important;
     padding: 0 8px;
   }
 
@@ -839,6 +946,13 @@
     box-shadow: 0 4px 12px rgba(255, 102, 0, 0.22);
   }
 
+  /* Profile header uses the user's pixel avatar instead of initials. */
+  html.hng-user-page[data-hn-glider-theme] svg.hng-profile-avatar.hng-avatar {
+    display: block;
+    background: hsl(var(--hng-av-h, 0) var(--hng-av-bg-s) var(--hng-av-bg-l));
+    box-shadow: var(--hng-shadow);
+  }
+
   html.hng-user-page[data-hn-glider-theme] .hng-profile-identity {
     flex: 1 1 180px;
     min-width: 0;
@@ -927,7 +1041,7 @@
     align-items: center;
     flex-wrap: nowrap;
     gap: 6px;
-    margin-top: 18px;
+    margin-top: 16px;
     padding-bottom: 2px;
     overflow-x: auto;
     scrollbar-width: none;
@@ -957,6 +1071,140 @@
   html.hng-user-page[data-hn-glider-theme] .hng-profile-actions a:hover {
     background: var(--hng-chip-up-bg);
     color: var(--hng-chip-up-ink) !important;
+  }
+
+  /* ---------- Profile settings form (own profile) ---------- */
+  html.hng-user-page[data-hn-glider-theme] .hng-profile form.hng-profile-form {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 18px 0 0 0 !important;
+    padding: 16px 0 0 0;
+    border-top: 1px solid var(--hng-border);
+    box-sizing: border-box;
+  }
+
+  html.hng-user-page[data-hn-glider-theme] .hng-profile-form table.hng-profile-fields {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    border-collapse: separate !important;
+    border-spacing: 0 10px !important;
+  }
+
+  html.hng-user-page[data-hn-glider-theme] .hng-profile-fields td {
+    padding: 0 !important;
+    vertical-align: top;
+    color: var(--hng-text);
+  }
+
+  html.hng-user-page[data-hn-glider-theme] .hng-profile-fields td.hng-field-label {
+    width: 96px;
+    padding: 8px 14px 0 0 !important;
+    color: var(--hng-text-dim);
+    font-size: 12px;
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  html.hng-user-page[data-hn-glider-theme] .hng-profile-fields td.hng-field-label label {
+    cursor: pointer;
+  }
+
+  html.hng-user-page[data-hn-glider-theme] .hng-profile-fields tr.hng-field-checkbox > td {
+    vertical-align: middle;
+  }
+
+  html.hng-user-page[data-hn-glider-theme] .hng-profile-fields tr.hng-field-checkbox > td.hng-field-label {
+    padding-top: 0 !important;
+  }
+
+  html.hng-user-page[data-hn-glider-theme] .hng-profile-fields input[type="text"],
+  html.hng-user-page[data-hn-glider-theme] .hng-profile-fields input:not([type]) {
+    width: 100% !important;
+    max-width: 180px !important;
+    box-sizing: border-box !important;
+  }
+
+  html.hng-user-page[data-hn-glider-theme] .hng-profile-fields input[name="uemail"] {
+    max-width: none !important;
+  }
+
+  html.hng-user-page[data-hn-glider-theme] .hng-profile-fields a[href="formatdoc"] {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--hng-text-faint) !important;
+    text-decoration: none;
+  }
+
+  html.hng-user-page[data-hn-glider-theme] .hng-profile-fields a[href="formatdoc"] font {
+    color: inherit !important;
+  }
+
+  html.hng-user-page[data-hn-glider-theme] .hng-email-note {
+    margin-top: 5px;
+    color: var(--hng-text-faint);
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  html.hng-user-page[data-hn-glider-theme] select.hng-select-hidden {
+    display: none !important;
+  }
+
+  html.hng-user-page[data-hn-glider-theme] input.hng-checkbox {
+    display: inline-grid !important;
+    place-content: center !important;
+    flex-shrink: 0 !important;
+    width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 1px solid var(--hng-border) !important;
+    border-radius: 4px !important;
+    background: var(--hng-surface-2) !important;
+    cursor: pointer;
+    vertical-align: middle;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    transition: background 0.12s ease, border-color 0.12s ease;
+  }
+
+  html.hng-user-page[data-hn-glider-theme] input.hng-checkbox::before {
+    content: "";
+    width: 11px;
+    height: 11px;
+    background: #fff;
+    clip-path: polygon(14% 44%, 0 65%, 45% 100%, 100% 16%, 82% 0, 43% 62%);
+    transform: scale(0);
+    transform-origin: center;
+    transition: transform 0.1s ease;
+  }
+
+  html.hng-user-page[data-hn-glider-theme] input.hng-checkbox:checked {
+    border-color: var(--hng-accent) !important;
+    background: var(--hng-accent) !important;
+  }
+
+  html.hng-user-page[data-hn-glider-theme] input.hng-checkbox:checked::before {
+    transform: scale(1);
+  }
+
+  html.hng-user-page[data-hn-glider-theme] input.hng-checkbox:focus-visible {
+    outline: 2px solid var(--hng-accent) !important;
+    outline-offset: 2px !important;
+  }
+
+  html.hng-user-page[data-hn-glider-theme] .hng-profile-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 6px;
+  }
+
+  html.hng-user-page[data-hn-glider-theme] .hng-profile-form-actions input[type="submit"] {
+    margin: 0 !important;
   }
 
   html.hng-user-page[data-hn-glider-theme] .hng-profile-export-panel {
@@ -1052,7 +1300,34 @@
       padding: 18px;
     }
 
+    html.hng-user-page[data-hn-glider-theme] .hng-profile-form table.hng-profile-fields,
+    html.hng-user-page[data-hn-glider-theme] .hng-profile-fields tbody {
+      display: block;
+    }
 
+    html.hng-user-page[data-hn-glider-theme] .hng-profile-fields tr {
+      display: block;
+      margin-bottom: 12px;
+    }
+
+    html.hng-user-page[data-hn-glider-theme] .hng-profile-fields td {
+      display: block;
+    }
+
+    html.hng-user-page[data-hn-glider-theme] .hng-profile-fields td.hng-field-label {
+      width: auto;
+      padding: 0 0 4px 0 !important;
+    }
+
+    html.hng-user-page[data-hn-glider-theme] .hng-profile-fields tr.hng-field-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    html.hng-user-page[data-hn-glider-theme] .hng-profile-fields tr.hng-field-checkbox > td.hng-field-label {
+      padding: 0 !important;
+    }
   }
 
   /* ---------- Algolia search page ---------- */
@@ -1809,6 +2084,58 @@
     margin-top: 8px;
   }
 
+  /* Add-comment / reply form: textarea on top, then one compact row with
+     "help" on the left and the submit button on the right. The cell holding
+     the form is widened in JS to line up with the comment cards. */
+  html[data-hn-glider-theme] form[action$="comment"] {
+    display: flex !important;
+    flex-flow: row wrap;
+    align-items: center;
+    gap: 6px 10px;
+    width: 100%;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  html[data-hn-glider-theme] form[action$="comment"] textarea {
+    order: -1;
+    flex: 0 0 100%;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  html[data-hn-glider-theme] form[action$="comment"] > *:not(textarea) {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  html[data-hn-glider-theme] form[action$="comment"] input[type="submit"] {
+    order: 2;
+    margin: 0 0 0 auto !important;
+    padding: 6px 14px !important;
+  }
+
+  html[data-hn-glider-theme] form[action$="comment"] a[href*="formatdoc"],
+  html[data-hn-glider-theme] form[action$="comment"] a[href*="formatdoc"] font {
+    color: var(--hng-text-faint) !important;
+    font-size: 11px;
+    text-decoration: none;
+  }
+
+  html[data-hn-glider-theme] td.hng-comment-form-cell {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+
+  /* HN separates the story and the comments with <br>s; use one margin. */
+  html[data-hn-glider-theme] table.fatitem ~ br {
+    display: none;
+  }
+
+  html[data-hn-glider-theme] table.fatitem ~ table.comment-tree {
+    margin-top: 14px;
+  }
+
   /* Keep HN's footer divider to a true 1px line. */
   html[data-hn-glider-theme] #hnmain table[cellspacing="0"][cellpadding="1"] {
     height: 1px !important;
@@ -2205,7 +2532,9 @@
     ).href;
   }
 
-  function sendHNFavoriteBeacon(url) {
+  // Fire-and-forget same-origin GET with the HN session cookies. This is
+  // how HN's own hn.js sends votes, and our fallback when fetch fails.
+  function sendHNBeacon(url) {
     return new Promise((resolve) => {
       const img = new Image();
       let settled = false;
@@ -2237,7 +2566,7 @@
       // fetch. A same-origin image request still performs the real GET with
       // the HN session cookies, so use that as a last resort.
       console.debug('[HN Glider] fetch failed, using HN favorite beacon', requestError);
-      await sendHNFavoriteBeacon(favoriteUrl);
+      await sendHNBeacon(favoriteUrl);
       return { loginRequired: false, unverified: true };
     }
 
@@ -2317,6 +2646,8 @@
   }
 
   function addFavoriteButton(athing) {
+    // First td.title in the row (the rank cell): the heart sits beside the
+    // rank chip and vote arrow.
     const titleCell = athing.querySelector('td.title');
     if (!titleCell || titleCell.querySelector('.hng-favorite')) return;
 
@@ -2383,14 +2714,21 @@
   function enhanceStoryList() {
     document.querySelectorAll('tr.athing:not(.comtr)').forEach((athing) => {
       addFavoriteButton(athing);
+
+      const rankEl = athing.querySelector('.rank');
+      if (rankEl && !rankEl.dataset.hngDone) {
+        rankEl.dataset.hngDone = '1';
+        rankEl.textContent = rankEl.textContent.replace(/\.\s*$/, '');
+        // Item pages have an empty rank; hide the chip but keep the cell,
+        // since the favorite heart lives there.
+        if (!rankEl.textContent.trim()) rankEl.classList.add('hng-rank-empty');
+      }
+
       const subtextRow = athing.nextElementSibling;
       if (!subtextRow) return;
       const subtext = subtextRow.querySelector('.subtext');
       if (!subtext || subtext.dataset.hngDone) return;
       subtext.dataset.hngDone = '1';
-
-      const rankEl = athing.querySelector('.rank');
-      if (rankEl) rankEl.textContent = rankEl.textContent.replace(/\.\s*$/, '');
 
       const scoreEl = subtext.querySelector('.score');
       const points = scoreEl ? parseInt(scoreEl.textContent, 10) : null;
@@ -2427,6 +2765,306 @@
     });
 
     loadHNFavoriteIds();
+  }
+
+  /* ------------------------------------------------------------------
+   * 5b. UPVOTES AS TOGGLE BUTTONS
+   * ------------------------------------------------------------------
+   * HN hides the arrow after voting and adds a separate "unvote" link.
+   * We keep the arrow visible, color it with the accent when voted, and
+   * let a second click unvote, the same way the favorite heart works.
+   * ------------------------------------------------------------------ */
+
+  function getVoteItemId(link) {
+    const match = (link.id || '').match(/^up_(\d+)$/);
+    return match ? match[1] : null;
+  }
+
+  function syncVoteLink(link, voted) {
+    const id = link.dataset.hngVoteId;
+    link.dataset.hngVoted = voted ? '1' : '0';
+    link.classList.toggle('hng-voted', voted);
+    link.classList.remove('nosee');
+    link.setAttribute('role', 'button');
+    link.setAttribute('aria-pressed', voted ? 'true' : 'false');
+    link.title = voted ? 'Remove upvote' : 'Upvote';
+    link.setAttribute('aria-label', link.title);
+
+    // HN hides the downvote arrow while an item is upvoted; keep that.
+    const down = document.getElementById('down_' + id);
+    if (down) down.classList.toggle('nosee', voted);
+  }
+
+  function enhanceVoteLinks() {
+    document.querySelectorAll('.votelinks a[id^="up_"]').forEach((link) => {
+      if (link.dataset.hngVoteId) return;
+      const id = getVoteItemId(link);
+      if (!id) return;
+
+      const unv = document.getElementById('unv_' + id);
+      const unvText = unv ? unv.textContent : '';
+      // A downvoted comment shows "undown"; leave HN's own controls alone.
+      if (/undown/i.test(unvText)) return;
+
+      link.dataset.hngVoteId = id;
+      const voted = link.classList.contains('nosee') || /unvote/i.test(unvText);
+      if (unv) unv.classList.add('hng-unv-hidden');
+      syncVoteLink(link, voted);
+    });
+  }
+
+  function adjustStoryPoints(id, delta) {
+    const scoreEl = document.getElementById('score_' + id);
+    if (!scoreEl) return;
+    const current = parseInt(scoreEl.textContent, 10);
+    if (!Number.isFinite(current)) return;
+
+    const next = Math.max(0, current + delta);
+    scoreEl.textContent = next + (next === 1 ? ' point' : ' points');
+
+    const subtext = scoreEl.closest('.subtext');
+    const chipValue = subtext ? subtext.querySelector('.hng-chip-points > span') : null;
+    if (chipValue) chipValue.textContent = String(next);
+  }
+
+  function buildVoteUrl(link, how) {
+    const id = link.dataset.hngVoteId;
+    if (how === 'un') {
+      const un = document.getElementById('un_' + id);
+      if (un && un.getAttribute('href')) return new URL(un.getAttribute('href'), location.href).href;
+    }
+    const url = new URL(link.getAttribute('href'), location.href);
+    url.searchParams.set('how', how);
+    return url.href;
+  }
+
+  async function sendHNVote(url) {
+    let res;
+    try {
+      // redirect: 'manual' stops us downloading the whole goto page.
+      res = await fetch(url, { credentials: 'include', cache: 'no-store', redirect: 'manual' });
+    } catch (fetchError) {
+      console.debug('[HN Glider] vote fetch failed, using beacon', fetchError);
+      await sendHNBeacon(url);
+      return;
+    }
+    if (res.type === 'opaqueredirect' || res.ok) return;
+    throw new Error('HN vote request failed: ' + res.status);
+  }
+
+  async function toggleHNVote(link) {
+    if (link.classList.contains('hng-vote-busy')) return;
+
+    const id = link.dataset.hngVoteId;
+    const wasVoted = link.dataset.hngVoted === '1';
+    const url = buildVoteUrl(link, wasVoted ? 'un' : 'up');
+
+    link.classList.add('hng-vote-busy');
+    syncVoteLink(link, !wasVoted);
+    adjustStoryPoints(id, wasVoted ? -1 : 1);
+
+    try {
+      await sendHNVote(url);
+    } catch (e) {
+      console.warn('[HN Glider] HN vote failed', e);
+      syncVoteLink(link, wasVoted);
+      adjustStoryPoints(id, wasVoted ? 1 : -1);
+      link.classList.add('hng-vote-error');
+      link.title = 'Could not update vote';
+      link.setAttribute('aria-label', link.title);
+      setTimeout(() => {
+        link.classList.remove('hng-vote-error');
+        syncVoteLink(link, link.dataset.hngVoted === '1');
+      }, 2000);
+    } finally {
+      link.classList.remove('hng-vote-busy');
+    }
+  }
+
+  function onVoteClick(event) {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const target = event.target;
+    const link = target && target.closest ? target.closest('.votelinks a[data-hng-vote-id]') : null;
+    if (!link) return;
+
+    // Logged-out arrows carry no auth token; let HN send them to login.
+    if (!/[?&]auth=/.test(link.getAttribute('href') || '')) return;
+
+    // Capture phase on window runs before HN's own vote handler, so we
+    // fully own the click.
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    toggleHNVote(link);
+  }
+
+  /* ------------------------------------------------------------------
+   * 5c. ADD-COMMENT FORM WIDTH
+   * ------------------------------------------------------------------
+   * HN puts the form in the title column, behind two empty cells. We let
+   * its cell span the whole row (the heart / arrow / title rows above are
+   * untouched), then indent it so it starts where the comment cards do.
+   * ------------------------------------------------------------------ */
+
+  function alignCommentForm() {
+    const cell = document.querySelector('td.hng-comment-form-cell');
+    if (!cell) return;
+    cell.style.paddingLeft = '';
+
+    const card = Array.from(document.querySelectorAll('.comment-tree tr.comtr .comment'))
+      .find((el) => el.getBoundingClientRect().width > 0);
+    if (!card) return;
+
+    const offset = Math.round(card.getBoundingClientRect().left - cell.getBoundingClientRect().left);
+    if (offset > 0 && offset < 240) cell.style.setProperty('padding-left', offset + 'px', 'important');
+
+    // Shift the heart + upvote arrow (and the title with them) so the heart
+    // starts exactly above the textarea's left edge.
+    const textarea = cell.querySelector('textarea');
+    const storyCell = cell.closest('table.fatitem')
+      ? cell.closest('table.fatitem').querySelector('tr.athing > td:first-child')
+      : null;
+    if (!textarea || !storyCell) return;
+    storyCell.style.removeProperty('padding-left');
+    const anchor = storyCell.querySelector('.hng-favorite') || storyCell;
+    const delta = Math.round(textarea.getBoundingClientRect().left - anchor.getBoundingClientRect().left);
+    if (delta > 0 && delta < 240) storyCell.style.setProperty('padding-left', delta + 'px', 'important');
+  }
+
+  function widenCommentForm() {
+    document.querySelectorAll('table.fatitem form[action$="comment"]').forEach((form) => {
+      const cell = form.closest('td');
+      const row = cell ? cell.parentElement : null;
+      if (!row || row.dataset.hngWide) return;
+      row.dataset.hngWide = '1';
+
+      let extraSpan = 0;
+      Array.from(row.cells).forEach((other) => {
+        if (other === cell || other.textContent.trim() || other.children.length) return;
+        extraSpan += other.colSpan || 1;
+        other.remove();
+      });
+      cell.colSpan = (cell.colSpan || 1) + extraSpan;
+      cell.classList.add('hng-comment-form-cell');
+    });
+
+    alignCommentForm();
+
+    let queued = false;
+    const realign = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        queued = false;
+        alignCommentForm();
+      });
+    };
+    window.addEventListener('resize', realign);
+    window.addEventListener('load', realign, { once: true });
+  }
+
+  /* ------------------------------------------------------------------
+   * 5d. PIXEL AVATARS
+   * ------------------------------------------------------------------
+   * A deterministic 5x5, left-right mirrored pattern per username (like
+   * Glider / GitHub identicons). Each username is hashed once; the
+   * pattern becomes a cached SVG mask string and the hue a number. One
+   * <span> per avatar, colors come from theme tokens in CSS.
+   * ------------------------------------------------------------------ */
+
+  const avatarCache = new Map();
+
+  function hashUsername(str, seed) {
+    let h = (0x811c9dc5 ^ seed) >>> 0;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 0x01000193);
+    }
+    // Final avalanche so similar names get very different patterns.
+    h ^= h >>> 16;
+    h = Math.imul(h, 0x85ebca6b);
+    h ^= h >>> 13;
+    h = Math.imul(h, 0xc2b2ae35);
+    h ^= h >>> 16;
+    return h >>> 0;
+  }
+
+  function countBits(value) {
+    let count = 0;
+    while (value) {
+      count += value & 1;
+      value >>>= 1;
+    }
+    return count;
+  }
+
+  function getAvatarData(username) {
+    if (avatarCache.has(username)) return avatarCache.get(username);
+
+    const a = hashUsername(username, 0);
+    const b = hashUsername(username, 0x9e3779b9);
+
+    // 15 bits = 5 rows x 3 columns (the right two columns mirror the left).
+    let bits = a & 0x7fff;
+    if (countBits(bits) < 5) bits |= b & 0x7fff;
+    if (countBits(bits) > 11) bits &= b & 0x7fff | 0x1249;
+
+    let path = '';
+    for (let row = 0; row < 5; row++) {
+      for (let col = 0; col < 3; col++) {
+        if (!(bits & (1 << (row * 3 + col)))) continue;
+        const cols = col === 2 ? [2] : [col, 4 - col];
+        cols.forEach((x) => {
+          path += 'M' + x + ' ' + row + 'h1v1h-1z';
+        });
+      }
+    }
+
+    // Build the SVG once per user and clone it for every occurrence.
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    // Half a cell of padding around the 5x5 grid.
+    svg.setAttribute('viewBox', '-0.5 -0.5 6 6');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    svg.style.setProperty('--hng-av-h', String(b % 360));
+    const shape = document.createElementNS(SVG_NS, 'path');
+    shape.setAttribute('d', path);
+    svg.appendChild(shape);
+
+    avatarCache.set(username, svg);
+    return svg;
+  }
+
+  function createAvatar(username, sizeClass) {
+    const avatar = getAvatarData(username).cloneNode(true);
+    avatar.setAttribute('class', 'hng-avatar ' + sizeClass);
+    return avatar;
+  }
+
+  function addAvatarBefore(link, sizeClass) {
+    if (link.dataset.hngAvatar) return;
+    const username = link.textContent.trim();
+    if (!username) return;
+    link.dataset.hngAvatar = '1';
+    link.insertAdjacentElement('beforebegin', createAvatar(username, sizeClass));
+  }
+
+  function enhanceAvatars() {
+    document.querySelectorAll('.comhead a.hnuser').forEach((link) => {
+      addAvatarBefore(link, 'hng-avatar-comment');
+    });
+    document.querySelectorAll('.subtext a.hnuser').forEach((link) => {
+      addAvatarBefore(link, 'hng-avatar-story');
+    });
+
+    const topbarUser = document.querySelector('.hng-topbar .hng-user[href*="user?id="]');
+    if (topbarUser && !topbarUser.dataset.hngAvatar) {
+      const username = getUsernameFromHref(topbarUser.getAttribute('href'));
+      if (username) {
+        topbarUser.dataset.hngAvatar = '1';
+        topbarUser.insertBefore(createAvatar(username, 'hng-avatar-topbar'), topbarUser.firstChild);
+      }
+    }
   }
 
   /* ------------------------------------------------------------------
@@ -2796,7 +3434,7 @@
     rows.forEach((row) => {
       lines.push(headers.map((header) => csvEscape(row[header])).join(','));
     });
-    return '\uFEFF' + lines.join('\r\n') + '\r\n';
+    return '﻿' + lines.join('\r\n') + '\r\n';
   }
 
   function encodeUTF8(text) {
@@ -3088,12 +3726,15 @@
     const aboutCell = values.get('about');
     const karmaText = karmaCell ? karmaCell.textContent.trim() : '';
     const karmaNumber = Number(karmaText.replace(/,/g, ''));
+    const aboutTextarea = aboutCell ? aboutCell.querySelector('textarea') : null;
 
     return {
       username,
       joined: createdCell ? createdCell.textContent.trim() : null,
       karma: Number.isFinite(karmaNumber) && karmaText ? karmaNumber : null,
-      about: aboutCell ? aboutCell.textContent.trim() : null,
+      about: aboutTextarea
+        ? aboutTextarea.value.trim()
+        : (aboutCell ? aboutCell.textContent.trim() : null),
     };
   }
 
@@ -3206,6 +3847,120 @@
     panel.appendChild(createProfileExportButton(profileData));
     return panel;
   }
+
+  /* ---------- Own-profile settings form ---------- */
+
+  // HN prints "Only admins see your email below..." as its own line above
+  // the email field. Pull that text out and show it small, under the input.
+  function moveEmailNote(form) {
+    const email = form.querySelector('input[name="uemail"]') ||
+      Array.from(form.querySelectorAll('input')).find((input) => /email/i.test(input.name || ''));
+    if (!email || form.querySelector('.hng-email-note')) return;
+
+    const walker = document.createTreeWalker(form, NodeFilter.SHOW_TEXT);
+    let textNode = null;
+    while (walker.nextNode()) {
+      if (/only admins see your email/i.test(walker.currentNode.nodeValue || '')) {
+        textNode = walker.currentNode;
+        break;
+      }
+    }
+    if (!textNode) return;
+
+    // Climb to the largest wrapper that holds only the note (no form fields).
+    let target = textNode;
+    let el = textNode.parentElement;
+    while (el && el !== form && !el.querySelector('input, select, textarea')) {
+      target = el;
+      el = el.parentElement;
+    }
+
+    const text = (target.textContent || '').replace(/\s+/g, ' ').trim();
+    if (!text) return;
+
+    if (target.nodeType === 1 && target.tagName === 'TR') {
+      target.classList.add('hng-profile-old-row');
+      target.style.setProperty('display', 'none', 'important');
+    } else if (target.nodeType === 1 && (target.tagName === 'TD' || target.tagName === 'TH')) {
+      target.textContent = '';
+    } else {
+      const prev = target.previousSibling;
+      const next = target.nextSibling;
+      target.remove();
+      [prev, next].forEach((node) => {
+        if (node && node.nodeName === 'BR') node.remove();
+      });
+    }
+
+    const note = document.createElement('div');
+    note.className = 'hng-email-note';
+    note.textContent = text;
+    email.insertAdjacentElement('afterend', note);
+  }
+
+  // showdead / noprocrast are yes/no selects. Show a checkbox instead and
+  // keep the (hidden) select in sync so the form still submits the same.
+  function convertYesNoSelects(form) {
+    form.querySelectorAll('select').forEach((select) => {
+      if (select.dataset.hngCheckbox) return;
+      const options = Array.from(select.options);
+      const valueOf = (option) => (option.value || option.textContent || '').trim();
+      const yes = options.find((option) => /^yes$/i.test(valueOf(option)));
+      const no = options.find((option) => /^no$/i.test(valueOf(option)));
+      if (!yes || !no || options.length !== 2) return;
+      select.dataset.hngCheckbox = '1';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'hng-checkbox';
+      checkbox.id = 'hng-cb-' + (select.name || Math.random().toString(36).slice(2));
+      checkbox.checked = yes.selected;
+
+      checkbox.addEventListener('change', () => {
+        yes.selected = checkbox.checked;
+        no.selected = !checkbox.checked;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+
+      const row = select.closest('tr');
+      const labelCell = row && row.cells.length >= 2 ? row.cells[0] : null;
+      if (labelCell && !labelCell.querySelector('label')) {
+        const label = document.createElement('label');
+        label.htmlFor = checkbox.id;
+        while (labelCell.firstChild) label.appendChild(labelCell.firstChild);
+        labelCell.appendChild(label);
+        checkbox.setAttribute('aria-label', label.textContent.replace(':', '').trim());
+      }
+      if (row) row.classList.add('hng-field-checkbox');
+
+      select.classList.add('hng-select-hidden');
+      select.insertAdjacentElement('afterend', checkbox);
+    });
+  }
+
+  function enhanceProfileForm(form, table) {
+    if (form.dataset.hngFormDone) return;
+    form.dataset.hngFormDone = '1';
+    form.classList.add('hng-profile-form');
+    table.classList.add('hng-profile-fields');
+
+    Array.from(table.rows).forEach((row) => {
+      if (row.cells.length >= 2) row.cells[0].classList.add('hng-field-label');
+    });
+
+    moveEmailNote(form);
+    convertYesNoSelects(form);
+
+    // Move the update button into a right-aligned row at the end of the form.
+    const submit = form.querySelector('input[type="submit"]');
+    if (submit) {
+      const actions = document.createElement('div');
+      actions.className = 'hng-profile-form-actions';
+      form.appendChild(actions);
+      actions.appendChild(submit);
+    }
+  }
+
   function buildProfileCard() {
     if (
       document.documentElement.getAttribute('op') !== 'user' &&
@@ -3232,9 +3987,8 @@
     const head = document.createElement('div');
     head.className = 'hng-profile-head';
 
-    const avatar = document.createElement('div');
-    avatar.className = 'hng-profile-avatar';
-    avatar.textContent = username.replace(/[^a-z0-9]/gi, '').slice(0, 2).toUpperCase() || 'HN';
+    const avatar = createAvatar(username, 'hng-avatar-profile');
+    avatar.classList.add('hng-profile-avatar');
 
     const identity = document.createElement('div');
     identity.className = 'hng-profile-identity';
@@ -3284,17 +4038,7 @@
     if (karmaText) identity.appendChild(karma);
     card.appendChild(head);
 
-    const aboutCell = values.get('about');
-    const aboutText = aboutCell ? aboutCell.textContent.trim() : '';
-    if (aboutText && aboutCell) {
-      const about = document.createElement('div');
-      about.className = 'hng-profile-about';
-      Array.from(aboutCell.childNodes).forEach((node) => {
-        about.appendChild(node.cloneNode(true));
-      });
-      card.appendChild(about);
-    }
-
+    // Pills go right under the username / joined / karma block.
     const actionDefs = [
       { key: 'submissions', label: 'submissions', match: (href) => /(?:^|\/)submitted\?id=/.test(href) },
       { key: 'comments', label: 'comments', match: (href) => /(?:^|\/)threads\?id=/.test(href) },
@@ -3307,21 +4051,6 @@
       const link = anchorList.find((a) => def.match(a.getAttribute('href') || ''));
       return link ? { def, link } : null;
     }).filter(Boolean);
-
-    const topbarUsername = getHNUsername();
-    const hasLogout = !!document.querySelector('a[href*="logout"]');
-    const sameUser = !!(topbarUsername && username &&
-      topbarUsername.toLowerCase() === username.toLowerCase());
-    const canExport = (!!topbarUsername && sameUser) || (!topbarUsername && hasLogout);
-    const exportUsername = topbarUsername || username;
-
-    if (!canExport) {
-      console.debug('[HN Glider] Export unavailable', {
-        topbarUsername,
-        profileUsername: username,
-        hasLogout,
-      });
-    }
 
     if (actionLinks.length) {
       const actions = document.createElement('div');
@@ -3346,6 +4075,19 @@
       card.appendChild(actions);
     }
 
+    // On someone else's profile "about" is plain text, shown in the card.
+    // On your own profile it's an editable textarea that stays in the form.
+    const aboutCell = values.get('about');
+    const aboutEditable = !!(aboutCell && aboutCell.querySelector('textarea'));
+    const aboutText = aboutCell ? aboutCell.textContent.trim() : '';
+    if (aboutText && aboutCell && !aboutEditable) {
+      const about = document.createElement('div');
+      about.className = 'hng-profile-about';
+      Array.from(aboutCell.childNodes).forEach((node) => {
+        about.appendChild(node.cloneNode(true));
+      });
+      card.appendChild(about);
+    }
 
     oldTable.dataset.hngProfileDone = '1';
     oldTable.classList.add('hng-profile-old');
@@ -3358,13 +4100,22 @@
       const hasActionLink = !!row.querySelector(
         'a[href*="submitted?id="], a[href*="threads?id="], a[href*="favorites?id="], a[href*="upvoted?id="]'
       );
-      if (replacedLabels.has(label) || hasActionLink) {
+      const keepEditableAbout = label === 'about' && aboutEditable;
+      if ((replacedLabels.has(label) && !keepEditableAbout) || hasActionLink) {
         row.classList.add('hng-profile-old-row');
         row.style.setProperty('display', 'none', 'important');
       }
     });
 
-    oldTable.parentNode.insertBefore(card, oldTable);
+    const profileForm = oldTable.closest('form');
+    if (profileForm && profileForm.parentNode) {
+      // Own profile: the settings form lives inside the card, under the pills.
+      profileForm.parentNode.insertBefore(card, profileForm);
+      card.appendChild(profileForm);
+      enhanceProfileForm(profileForm, oldTable);
+    } else {
+      oldTable.parentNode.insertBefore(card, oldTable);
+    }
   }
 
   function enhanceAlgoliaPage() {
@@ -3450,6 +4201,13 @@
     enhanceStoryList();
     enhanceComments();
     enhanceUserKarma();
+    enhanceAvatars();
+
+    if (location.hostname === 'news.ycombinator.com') {
+      widenCommentForm();
+      enhanceVoteLinks();
+      window.addEventListener('click', onVoteClick, true);
+    }
   }
 
   if (document.readyState === 'loading') {
