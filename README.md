@@ -14,4 +14,4 @@ Stylistically inspired by the [Glider Android app](https://github.com/mosc/glide
 Install from here:
 https://greasyfork.org/en/scripts/603152-hn-glider-skin
 
-Note that this requires a userscript extension (I recommend [violentmonkey](https://github.com/violentmonkey/violentmonkey) for Chromium-based browsers (Brave, Google Chrome, Microsoft Edge) and [greasemonkey](https://github.com/greasemonkey/greasemonkey) for Firefox)
+Note that this requires a userscript extension (I recommend [violentmonkey](https://github.com/violentmonkey/violentmonkey) for Chromium-based browsers (Brave, Google Chrome, Microsoft Edge) and [greasemonkey](https://github.com/greasemonkey/greasemonkey) for Firefox.
