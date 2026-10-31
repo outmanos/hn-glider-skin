@@ -1,6 +1,6 @@
 # HN Glider Skin
 
-Userscript that reskins Hacker News with a modern, Material look: card-based rows, clean typography, upvote/comment counts as stat chips, light/dark/auto theme toggle and an data export function.
+Userscript that reskins **Hacker News** with a modern, Material look: card-based rows, clean typography, upvote/comment counts as stat chips, light/dark/auto theme toggle and an data export function.
 
 Stylistically inspired by the [Glider Android app](https://github.com/mosc/glider).
 
