@@ -2,7 +2,7 @@
 // @name         HN Glider Skin
 // @namespace    https://github.com/outmanos/hn-glider-skin
 // @version      1.3.0
-// @description  Userscript that reskins **Hacker News** with a modern, Material look: card-based rows, clean typography, upvote/comment counts as stat chips, light/dark/auto theme toggle and a data export function.
+// @description  Userscript that reskins Hacker News with a modern, Material look: card-based rows, clean typography, upvote/comment counts as stat chips, light/dark/auto theme toggle and a data export function.
 // @author       outmanos
 // @license      GPLv3
 // @match        https://news.ycombinator.com/*
